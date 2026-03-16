@@ -1,0 +1,12 @@
+2026/03/16-17:00:56.820 23ac Reusing MANIFEST C:\Users\gugas\OneDrive\Área de Trabalho\Workspace\Projeto Bot Whatsapp\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/16-17:00:56.820 23ac Recovering log #93
+2026/03/16-17:00:56.858 23ac Reusing old log C:\Users\gugas\OneDrive\Área de Trabalho\Workspace\Projeto Bot Whatsapp\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000093.log 
+2026/03/16-17:01:07.300 23ac Level-0 table #98: started
+2026/03/16-17:01:07.324 23ac Level-0 table #98: 1367812 bytes OK
+2026/03/16-17:01:07.326 23ac Delete type=0 #93
+2026/03/16-17:01:07.664 23ac Compacting 1@1 + 1@2 files
+2026/03/16-17:01:07.701 23ac Generated table #99@1: 24757 keys, 915049 bytes
+2026/03/16-17:01:07.701 23ac Compacted 1@1 + 1@2 files => 915049 bytes
+2026/03/16-17:01:07.702 23ac compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/03/16-17:01:07.703 23ac Delete type=2 #95
+2026/03/16-17:01:07.703 23ac Delete type=2 #98
