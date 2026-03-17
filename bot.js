@@ -1,5 +1,3 @@
-// bot.js — Prioriza LocalAuth (preserva comportamento original) e opcionalmente persiste em Mongo
-// Instale: npm i mongodb dotenv whatsapp-web.js qrcode-terminal
 require('dotenv').config();
 
 const fs = require('fs');
@@ -8,7 +6,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const { MongoClient } = require('mongodb');
 
-// seu modules DB — mantive os mesmos imports do seu projeto
+// módulos do seu projeto
 const {
   getUser,
   createUser,
@@ -16,17 +14,17 @@ const {
   updateLastMessage,
   addOrder
 } = require('./database/users');
-
 const { createOrder } = require('./database/orders');
 
 const MONGO_URI = process.env.MONGO_URI;
 const DB_NAME = 'whatsapp';
 const SESS_COLLECTION = 'sessions';
 
-// detecta se há sessão local em disco (comportamento original)
+// detecta se existe sessão local
 const localAuthDir = path.join(__dirname, '.wwebjs_auth');
 const useLocalAuth = fs.existsSync(localAuthDir);
 
+// Funções de persistência de sessão no Mongo
 async function loadSessionFromDB() {
   if (!MONGO_URI) return null;
   const m = new MongoClient(MONGO_URI);
@@ -64,17 +62,11 @@ async function saveSessionToDB(data) {
 
 (async () => {
   try {
-    // Carrega session do Mongo (somente se necessário)
     const sessionData = await loadSessionFromDB();
+    const puppeteerOpts = { headless: true, args: ['--no-sandbox','--disable-setuid-sandbox'] };
 
-    const puppeteerOpts = { headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] };
-
-    // Lógica de prioridade:
-    // 1) Se existe .wwebjs_auth, usa LocalAuth (mantém seu comportamento antigo)
-    // 2) Else, se há sessionData no Mongo, usa session
-    // 3) Else, se MONGO_URI definido, cria Client sem authStrategy (gerará QR e salvará no Mongo ao autenticar)
-    // 4) Else fallback: LocalAuth (desenvolvimento)
     let client;
+
     if (useLocalAuth) {
       console.log('Usando LocalAuth (.wwebjs_auth) — comportamento local preservado.');
       client = new Client({ authStrategy: new LocalAuth(), puppeteer: puppeteerOpts });
@@ -85,28 +77,19 @@ async function saveSessionToDB(data) {
       console.log('MONGO_URI definido e sem sessão local — iniciando para gerar QR e salvar no Mongo.');
       client = new Client({ puppeteer: puppeteerOpts });
     } else {
-      console.log('Nenhuma sessão encontrada — usando LocalAuth fallback.');
+      console.log('Nenhuma sessão encontrada — fallback para LocalAuth.');
       client = new Client({ authStrategy: new LocalAuth(), puppeteer: puppeteerOpts });
     }
 
+    // QR code
     client.on('qr', qr => {
-      console.log('📱 QR gerado — escaneie (apenas se necessário):');
+      console.log('📱 QR gerado — escaneie apenas se necessário:');
       qrcode.generate(qr, { small: true });
     });
 
     client.on('authenticated', async (session) => {
-      console.log('🔐 Evento authenticated recebido.');
-      // Se estivermos usando LocalAuth, o módulo já gravou a sessão em disco;
-      // ainda assim, se MONGO_URI estiver definido, gravamos também no DB para produção.
-      if (MONGO_URI) {
-        try {
-          await saveSessionToDB(session);
-        } catch (e) {
-          console.error('Erro salvando sessão no authenticated:', e);
-        }
-      } else {
-        console.log('MONGO_URI não definido — sessão salva localmente por LocalAuth.');
-      }
+      console.log('🔐 Autenticado com sucesso.');
+      if (MONGO_URI) await saveSessionToDB(session);
     });
 
     client.on('auth_failure', msg => {
@@ -115,18 +98,10 @@ async function saveSessionToDB(data) {
 
     client.once('ready', async () => {
       console.log('🤖 Bot conectado com sucesso!');
-      // Algumas versões do whatsapp-web.js não emitem authenticated em todas as situações,
-      // mas possuem client.authInfo — tente salvar isso no Mongo se disponível e MONGO_URI definido.
-      if (MONGO_URI && client.authInfo) {
-        try {
-          await saveSessionToDB(client.authInfo);
-        } catch (e) {
-          console.error('Erro salvando authInfo no ready:', e);
-        }
-      }
+      if (MONGO_URI && client.authInfo) await saveSessionToDB(client.authInfo);
     });
 
-    // ===== handlers (mantive a sua lógica) =====
+    // ===== Mensagens (seu código original) =====
     const mensagensProcessadas = new Set();
     function saudacao(){ const hora = new Date().getHours(); if (hora < 12) return '🌅 Bom dia'; if (hora < 18) return '☀️ Boa tarde'; return '🌙 Boa noite'; }
 
@@ -140,7 +115,6 @@ async function saveSessionToDB(data) {
 
         const msg = message.body.toLowerCase();
         const number = message.from;
-        console.log('Mensagem:', msg);
 
         const contact = await message.getContact();
         const nome = contact.pushname || 'cliente';
